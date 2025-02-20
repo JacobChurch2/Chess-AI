@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace Chess.Game {
-	public class GameManager : MonoBehaviour {
+namespace Chess.Game
+{
+	public class GameManager : MonoBehaviour
+	{
 
 		public enum Result { Playing, WhiteIsMated, BlackIsMated, Stalemate, Repetition, FiftyMoveRule, InsufficientMaterial }
 
@@ -39,90 +41,118 @@ namespace Chess.Game {
 		public Board board { get; private set; }
 		Board searchBoard; // Duplicate version of board used for ai search
 
-		void Start () {
+		void Start()
+		{
 			//Application.targetFrameRate = 60;
 
-			if (useClocks) {
+			if (useClocks)
+			{
 				whiteClock.isTurnToMove = false;
 				blackClock.isTurnToMove = false;
 			}
 
-			boardUI = FindObjectOfType<BoardUI> ();
-			gameMoves = new List<Move> ();
-			board = new Board ();
-			searchBoard = new Board ();
-			aiSettings.diagnostics = new Search.SearchDiagnostics ();
+			boardUI = FindObjectOfType<BoardUI>();
+			gameMoves = new List<Move>();
+			board = new Board();
+			searchBoard = new Board();
+			aiSettings.diagnostics = new Search.SearchDiagnostics();
 
-			NewGame (whitePlayerType, blackPlayerType);
+			NewGame(whitePlayerType, blackPlayerType, false);
 
 		}
 
-		void Update () {
+		void Update()
+		{
 			zobristDebug = board.ZobristKey;
 
-			if (gameResult == Result.Playing) {
-				LogAIDiagnostics ();
+			if (gameResult == Result.Playing)
+			{
+				LogAIDiagnostics();
 
-				playerToMove.Update ();
+				playerToMove.Update();
 
-				if (useClocks) {
+				if (useClocks)
+				{
 					whiteClock.isTurnToMove = board.WhiteToMove;
 					blackClock.isTurnToMove = !board.WhiteToMove;
 				}
 			}
 
-			if (Input.GetKeyDown (KeyCode.E)) {
-				ExportGame ();
+			if (Input.GetKeyDown(KeyCode.E))
+			{
+				ExportGame();
 			}
 
 		}
 
-		void OnMoveChosen (Move move) {
+		void OnMoveChosen(Move move)
+		{
 			bool animateMove = playerToMove is AIPlayer;
-			board.MakeMove (move);
-			searchBoard.MakeMove (move);
+			board.MakeMove(move);
+			searchBoard.MakeMove(move);
 
-			gameMoves.Add (move);
-			onMoveMade?.Invoke (move);
-			boardUI.OnMoveMade (board, move, animateMove);
+			gameMoves.Add(move);
+			onMoveMade?.Invoke(move);
+			boardUI.OnMoveMade(board, move, animateMove);
 
-			NotifyPlayerToMove ();
+			NotifyPlayerToMove();
 		}
 
-		public void NewGame (bool humanPlaysWhite) {
-			boardUI.SetPerspective (humanPlaysWhite);
-			NewGame ((humanPlaysWhite) ? PlayerType.Human : PlayerType.AI, (humanPlaysWhite) ? PlayerType.AI : PlayerType.Human);
+		public void NewGame(bool humanPlaysWhite)
+		{
+			boardUI.SetPerspective(humanPlaysWhite);
+			NewGame((humanPlaysWhite) ? PlayerType.Human : PlayerType.AI, (humanPlaysWhite) ? PlayerType.AI : PlayerType.Human, false);
 		}
 
-		public void NewComputerVersusComputerGame () {
-			boardUI.SetPerspective (true);
-			NewGame (PlayerType.AI, PlayerType.AI);
+		public void NewComputerVersusComputerGame()
+		{
+			boardUI.SetPerspective(true);
+			NewGame(PlayerType.AI, PlayerType.AI, false);
 		}
 
-		void NewGame (PlayerType whitePlayerType, PlayerType blackPlayerType) {
-			gameMoves.Clear ();
-			if (loadCustomPosition) {
-				board.LoadPosition (customPosition);
-				searchBoard.LoadPosition (customPosition);
-			} else {
-				board.LoadStartPosition ();
-				searchBoard.LoadStartPosition ();
+		public void NewChess960Game(bool humanPlaysWhite)
+		{
+			boardUI.SetPerspective(true);
+			NewGame((humanPlaysWhite) ? PlayerType.Human : PlayerType.AI, (humanPlaysWhite) ? PlayerType.AI : PlayerType.Human, true);
+		}
+
+		void NewGame(PlayerType whitePlayerType, PlayerType blackPlayerType, bool Chess960)
+		{
+			gameMoves.Clear();
+			if (loadCustomPosition)
+			{
+				board.LoadPosition(customPosition);
+				searchBoard.LoadPosition(customPosition);
 			}
-			onPositionLoaded?.Invoke ();
-			boardUI.UpdatePosition (board);
-			boardUI.ResetSquareColours ();
+			else
+			{
+				if (Chess960)
+				{
+					string stringboard = board.LoadNewChess960();
+					searchBoard.LoadChess960FromString(stringboard);
+					print("Chess960");
+				}
+				else
+				{
+					board.LoadStartPosition();
+					searchBoard.LoadStartPosition();
+				}
+			}
+			onPositionLoaded?.Invoke();
+			boardUI.UpdatePosition(board);
+			boardUI.ResetSquareColours();
 
-			CreatePlayer (ref whitePlayer, whitePlayerType);
-			CreatePlayer (ref blackPlayer, blackPlayerType);
+			CreatePlayer(ref whitePlayer, whitePlayerType);
+			CreatePlayer(ref blackPlayer, blackPlayerType);
 
 			gameResult = Result.Playing;
-			PrintGameResult (gameResult);
+			PrintGameResult(gameResult);
 
-			NotifyPlayerToMove ();
-
+			NotifyPlayerToMove();
 		}
 
-		void LogAIDiagnostics () {
+		void LogAIDiagnostics()
+		{
 			string text = "";
 			var d = aiSettings.diagnostics;
 			//text += "AI Diagnostics";
@@ -131,15 +161,20 @@ namespace Chess.Game {
 			//text += $"\nPositions evaluated: {d.numPositionsEvaluated}";
 
 			string evalString = "";
-			if (d.isBook) {
+			if (d.isBook)
+			{
 				evalString = "Book";
-			} else {
+			}
+			else
+			{
 				float displayEval = d.eval / 100f;
-				if (playerToMove is AIPlayer && !board.WhiteToMove) {
+				if (playerToMove is AIPlayer && !board.WhiteToMove)
+				{
 					displayEval = -displayEval;
 				}
-				evalString = ($"{displayEval:00.00}").Replace (",", ".");
-				if (Search.IsMateScore (d.eval)) {
+				evalString = ($"{displayEval:00.00}").Replace(",", ".");
+				if (Search.IsMateScore(d.eval))
+				{
 					evalString = $"mate in {Search.NumPlyToMateFromScore(d.eval)} ply";
 				}
 			}
@@ -149,79 +184,102 @@ namespace Chess.Game {
 			aiDiagnosticsUI.text = text;
 		}
 
-		public void ExportGame () {
-			string pgn = PGNCreator.CreatePGN (gameMoves.ToArray ());
+		public void ExportGame()
+		{
+			string pgn = PGNCreator.CreatePGN(gameMoves.ToArray());
 			string baseUrl = "https://www.lichess.org/paste?pgn=";
-			string escapedPGN = UnityEngine.Networking.UnityWebRequest.EscapeURL (pgn);
+			string escapedPGN = UnityEngine.Networking.UnityWebRequest.EscapeURL(pgn);
 			string url = baseUrl + escapedPGN;
 
-			Application.OpenURL (url);
-			TextEditor t = new TextEditor ();
+			Application.OpenURL(url);
+			TextEditor t = new TextEditor();
 			t.text = pgn;
-			t.SelectAll ();
-			t.Copy ();
+			t.SelectAll();
+			t.Copy();
 		}
 
-		public void QuitGame () {
-			Application.Quit ();
+		public void QuitGame()
+		{
+			Application.Quit();
 		}
 
-		void NotifyPlayerToMove () {
-			gameResult = GetGameState ();
-			PrintGameResult (gameResult);
+		void NotifyPlayerToMove()
+		{
+			gameResult = GetGameState();
+			PrintGameResult(gameResult);
 
-			if (gameResult == Result.Playing) {
+			if (gameResult == Result.Playing)
+			{
 				playerToMove = (board.WhiteToMove) ? whitePlayer : blackPlayer;
-				playerToMove.NotifyTurnToMove ();
+				playerToMove.NotifyTurnToMove();
 
-			} else {
-				Debug.Log ("Game Over");
+			}
+			else
+			{
+				Debug.Log("Game Over");
 			}
 		}
 
-		void PrintGameResult (Result result) {
+		void PrintGameResult(Result result)
+		{
 			float subtitleSize = resultUI.fontSize * 0.75f;
 			string subtitleSettings = $"<color=#787878> <size={subtitleSize}>";
 
-			if (result == Result.Playing) {
+			if (result == Result.Playing)
+			{
 				resultUI.text = "";
-			} else if (result == Result.WhiteIsMated || result == Result.BlackIsMated) {
+			}
+			else if (result == Result.WhiteIsMated || result == Result.BlackIsMated)
+			{
 				resultUI.text = "Checkmate!";
-			} else if (result == Result.FiftyMoveRule) {
+			}
+			else if (result == Result.FiftyMoveRule)
+			{
 				resultUI.text = "Draw";
 				resultUI.text += subtitleSettings + "\n(50 move rule)";
-			} else if (result == Result.Repetition) {
+			}
+			else if (result == Result.Repetition)
+			{
 				resultUI.text = "Draw";
 				resultUI.text += subtitleSettings + "\n(3-fold repetition)";
-			} else if (result == Result.Stalemate) {
+			}
+			else if (result == Result.Stalemate)
+			{
 				resultUI.text = "Draw";
 				resultUI.text += subtitleSettings + "\n(Stalemate)";
-			} else if (result == Result.InsufficientMaterial) {
+			}
+			else if (result == Result.InsufficientMaterial)
+			{
 				resultUI.text = "Draw";
 				resultUI.text += subtitleSettings + "\n(Insufficient material)";
 			}
 		}
 
-		Result GetGameState () {
-			MoveGenerator moveGenerator = new MoveGenerator ();
-			var moves = moveGenerator.GenerateMoves (board);
+		Result GetGameState()
+		{
+			MoveGenerator moveGenerator = new MoveGenerator();
+			var moves = moveGenerator.GenerateMoves(board);
 
 			// Look for mate/stalemate
-			if (moves.Count == 0) {
-				if (moveGenerator.InCheck ()) {
+			if (moves.Count == 0)
+			{
+				if (moveGenerator.InCheck())
+				{
 					return (board.WhiteToMove) ? Result.WhiteIsMated : Result.BlackIsMated;
 				}
 				return Result.Stalemate;
 			}
 
 			// Fifty move rule
-			if (board.fiftyMoveCounter >= 100) {
+			if (board.fiftyMoveCounter >= 100)
+			{
 				return Result.FiftyMoveRule;
 			}
 
 			// Threefold repetition
-			int repCount = board.RepetitionPositionHistory.Count ((x => x == board.ZobristKey));
-			if (repCount == 3) {
+			int repCount = board.RepetitionPositionHistory.Count((x => x == board.ZobristKey));
+			if (repCount == 3)
+			{
 				return Result.Repetition;
 			}
 
@@ -232,8 +290,10 @@ namespace Chess.Game {
 			int numKnights = board.knights[Board.WhiteIndex].Count + board.knights[Board.BlackIndex].Count;
 			int numBishops = board.bishops[Board.WhiteIndex].Count + board.bishops[Board.BlackIndex].Count;
 
-			if (numPawns + numRooks + numQueens == 0) {
-				if (numKnights == 1 || numBishops == 1) {
+			if (numPawns + numRooks + numQueens == 0)
+			{
+				if (numKnights == 1 || numBishops == 1)
+				{
 					return Result.InsufficientMaterial;
 				}
 			}
@@ -241,15 +301,20 @@ namespace Chess.Game {
 			return Result.Playing;
 		}
 
-		void CreatePlayer (ref Player player, PlayerType playerType) {
-			if (player != null) {
+		void CreatePlayer(ref Player player, PlayerType playerType)
+		{
+			if (player != null)
+			{
 				player.onMoveChosen -= OnMoveChosen;
 			}
 
-			if (playerType == PlayerType.Human) {
-				player = new HumanPlayer (board);
-			} else {
-				player = new AIPlayer (searchBoard, aiSettings);
+			if (playerType == PlayerType.Human)
+			{
+				player = new HumanPlayer(board);
+			}
+			else
+			{
+				player = new AIPlayer(searchBoard, aiSettings);
 			}
 			player.onMoveChosen += OnMoveChosen;
 		}

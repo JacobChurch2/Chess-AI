@@ -1,5 +1,8 @@
 ﻿namespace Chess {
+	using UnityEngine;
+	using System;
 	using System.Collections.Generic;
+	using System.Runtime.InteropServices;
 
 	public class Board {
 
@@ -194,7 +197,6 @@
 					RepetitionPositionHistory.Push (ZobristKey);
 				}
 			}
-
 		}
 
 		// Undo a move previously made on the board
@@ -310,6 +312,77 @@
 		// Load the starting position
 		public void LoadStartPosition () {
 			LoadPosition (FenUtility.startFen);
+		}
+
+		public string LoadNewChess960()
+		{
+			int King = UnityEngine.Random.Range(1, 7);
+			int Rook1 = UnityEngine.Random.Range(0, King);
+			int Rook2 = UnityEngine.Random.Range(King + 1, 8);
+
+			int Bishop1;
+			do
+			{
+				Bishop1 = UnityEngine.Random.Range(0, 8);
+			}
+			while (Bishop1 == King || Bishop1 == Rook1 || Bishop1 == Rook2);
+
+			int Bishop2;
+			do
+			{
+				Bishop2 = UnityEngine.Random.Range(0, 8);
+			}
+			while (Bishop2 == King || Bishop2 == Rook1 || Bishop2 == Rook2 || Bishop2 % 2 == Bishop1 % 2);
+
+			int Knight1;
+			do
+			{
+				Knight1 = UnityEngine.Random.Range(0, 8);
+			}
+			while (Knight1 == King || Knight1 == Rook1 || Knight1 == Rook2 || Knight1 == Bishop1 || Knight1 == Bishop2);
+
+			int Knight2;
+			do
+			{
+				Knight2 = UnityEngine.Random.Range(0, 8);
+			}
+			while (Knight2 == King || Knight2 == Rook1 || Knight2 == Rook2 || Knight2 == Bishop1 || Knight2 == Bishop2 || Knight2 == Knight1);
+
+			string[] backline1 = new string[8];
+			backline1[King] = "k";
+			backline1[Rook1] = "r";
+			backline1[Rook2] = "r";
+			backline1[Bishop1] = "b";
+			backline1[Bishop2] = "b";
+			backline1[Knight1] = "n";
+			backline1[Knight2] = "n";
+
+			for(int i = 0; i < 8; i++)
+			{
+				if (backline1[i] == null)
+				{
+					backline1[i] = "q";
+				}
+			}
+			string board = "";
+			for (int i = 0; i < backline1.Length; i++)
+			{
+				board += backline1[i];
+			}
+			board += "/pppppppp/8/8/8/8/PPPPPPPP/";
+			for (int i = 0; i < backline1.Length; i++)
+			{
+				board += backline1[i].ToUpper();
+			}
+			board += " w KQkq - 0 1";
+			LoadPosition(board);
+			return board;
+		}
+
+		public string LoadChess960FromString(string board)
+		{
+			LoadPosition(board);
+			return board;
 		}
 
 		// Load custom position from fen string
