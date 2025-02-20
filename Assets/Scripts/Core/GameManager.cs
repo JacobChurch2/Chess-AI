@@ -38,7 +38,7 @@ namespace Chess.Game
 		BoardUI boardUI;
 
 		public ulong zobristDebug;
-		public Board board { get; private set; }
+		public Board board { get; set; }
 		Board searchBoard; // Duplicate version of board used for ai search
 
 		void Start()
@@ -59,6 +59,66 @@ namespace Chess.Game
 
 			NewGame(whitePlayerType, blackPlayerType, false);
 
+		}
+
+		public void TestingStart()
+		{
+			//Application.targetFrameRate = 60;
+
+			if (useClocks)
+			{
+				whiteClock.isTurnToMove = false;
+				blackClock.isTurnToMove = false;
+			}
+
+			boardUI = FindObjectOfType<BoardUI>();
+			gameMoves = new List<Move>();
+			board = new Board();
+			searchBoard = new Board();
+			aiSettings.diagnostics = new Search.SearchDiagnostics();
+
+			NewGameForTesting(whitePlayerType, blackPlayerType, false);
+		}
+
+		void NewGameForTesting(PlayerType whitePlayerType, PlayerType blackPlayerType, bool Chess960)
+		{
+			gameMoves.Clear();
+			if (loadCustomPosition)
+			{
+				board.LoadPosition(customPosition);
+				searchBoard.LoadPosition(customPosition);
+			}
+			else
+			{
+				if (Chess960)
+				{
+					string stringboard = board.LoadNewChess960();
+					searchBoard.LoadChess960FromString(stringboard);
+					print("Chess960");
+				}
+				else
+				{
+					board.LoadStartPosition();
+					searchBoard.LoadStartPosition();
+				}
+			}
+			onPositionLoaded?.Invoke();
+			//boardUI.UpdatePosition(board);
+			//boardUI.ResetSquareColours();
+
+			CreatePlayer(ref whitePlayer, whitePlayerType);
+			CreatePlayer(ref blackPlayer, blackPlayerType);
+
+			gameResult = Result.Playing;
+			//PrintGameResult(gameResult);
+
+			//NotifyPlayerToMove();
+		}
+
+		public void NewChess960GameForTesting(bool humanPlaysWhite)
+		{
+			//boardUI.SetPerspective(true);
+			NewGameForTesting((humanPlaysWhite) ? PlayerType.Human : PlayerType.AI, (humanPlaysWhite) ? PlayerType.AI : PlayerType.Human, true);
 		}
 
 		void Update()
