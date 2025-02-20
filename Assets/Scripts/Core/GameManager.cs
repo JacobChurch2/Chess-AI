@@ -61,66 +61,6 @@ namespace Chess.Game
 
 		}
 
-		public void TestingStart()
-		{
-			//Application.targetFrameRate = 60;
-
-			if (useClocks)
-			{
-				whiteClock.isTurnToMove = false;
-				blackClock.isTurnToMove = false;
-			}
-
-			boardUI = FindObjectOfType<BoardUI>();
-			gameMoves = new List<Move>();
-			board = new Board();
-			searchBoard = new Board();
-			aiSettings.diagnostics = new Search.SearchDiagnostics();
-
-			NewGameForTesting(whitePlayerType, blackPlayerType, false);
-		}
-
-		void NewGameForTesting(PlayerType whitePlayerType, PlayerType blackPlayerType, bool Chess960)
-		{
-			gameMoves.Clear();
-			if (loadCustomPosition)
-			{
-				board.LoadPosition(customPosition);
-				searchBoard.LoadPosition(customPosition);
-			}
-			else
-			{
-				if (Chess960)
-				{
-					string stringboard = board.LoadNewChess960();
-					searchBoard.LoadChess960FromString(stringboard);
-					print("Chess960");
-				}
-				else
-				{
-					board.LoadStartPosition();
-					searchBoard.LoadStartPosition();
-				}
-			}
-			onPositionLoaded?.Invoke();
-			//boardUI.UpdatePosition(board);
-			//boardUI.ResetSquareColours();
-
-			CreatePlayer(ref whitePlayer, whitePlayerType);
-			CreatePlayer(ref blackPlayer, blackPlayerType);
-
-			gameResult = Result.Playing;
-			//PrintGameResult(gameResult);
-
-			//NotifyPlayerToMove();
-		}
-
-		public void NewChess960GameForTesting(bool humanPlaysWhite)
-		{
-			//boardUI.SetPerspective(true);
-			NewGameForTesting((humanPlaysWhite) ? PlayerType.Human : PlayerType.AI, (humanPlaysWhite) ? PlayerType.AI : PlayerType.Human, true);
-		}
-
 		void Update()
 		{
 			zobristDebug = board.ZobristKey;
@@ -172,15 +112,21 @@ namespace Chess.Game
 
 		public void NewChess960Game(bool humanPlaysWhite)
 		{
+			// Set the board UI to white's perspective
 			boardUI.SetPerspective(true);
+
+			// Start a new Chess960 game, assigning human and AI players based on input
 			NewGame((humanPlaysWhite) ? PlayerType.Human : PlayerType.AI, (humanPlaysWhite) ? PlayerType.AI : PlayerType.Human, true);
 		}
 
 		void NewGame(PlayerType whitePlayerType, PlayerType blackPlayerType, bool Chess960)
 		{
+			// Clear the list of game moves
 			gameMoves.Clear();
+
 			if (loadCustomPosition)
 			{
+				// Load a custom board position if specified
 				board.LoadPosition(customPosition);
 				searchBoard.LoadPosition(customPosition);
 			}
@@ -188,26 +134,39 @@ namespace Chess.Game
 			{
 				if (Chess960)
 				{
+					// Generate and load a new Chess960 position
 					string stringboard = board.LoadNewChess960();
 					searchBoard.LoadChess960FromString(stringboard);
 					print("Chess960");
 				}
 				else
 				{
+					// Load the standard chess starting position
 					board.LoadStartPosition();
 					searchBoard.LoadStartPosition();
 				}
 			}
+
+			// Trigger any subscribers that the position has been loaded
 			onPositionLoaded?.Invoke();
+
+			// Update the UI to reflect the current board position
 			boardUI.UpdatePosition(board);
+
+			// Reset the square colors on the board UI
 			boardUI.ResetSquareColours();
 
+			// Create player objects for white and black
 			CreatePlayer(ref whitePlayer, whitePlayerType);
 			CreatePlayer(ref blackPlayer, blackPlayerType);
 
+			// Set the current game state to "Playing"
 			gameResult = Result.Playing;
+
+			// Display the current game result
 			PrintGameResult(gameResult);
 
+			// Notify the current player that it's their turn to move
 			NotifyPlayerToMove();
 		}
 

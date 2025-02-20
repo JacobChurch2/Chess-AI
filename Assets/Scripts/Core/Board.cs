@@ -316,10 +316,16 @@
 
 		public string LoadNewChess960()
 		{
+			// Randomly place the king between squares 1 and 6
 			int King = UnityEngine.Random.Range(1, 7);
+
+			// Randomly place the first rook before the king
 			int Rook1 = UnityEngine.Random.Range(0, King);
+
+			// Randomly place the second rook after the king
 			int Rook2 = UnityEngine.Random.Range(King + 1, 8);
 
+			// Randomly place the first bishop in an available position
 			int Bishop1;
 			do
 			{
@@ -327,6 +333,7 @@
 			}
 			while (Bishop1 == King || Bishop1 == Rook1 || Bishop1 == Rook2);
 
+			// Randomly place the second bishop on the opposite color square
 			int Bishop2;
 			do
 			{
@@ -334,6 +341,7 @@
 			}
 			while (Bishop2 == King || Bishop2 == Rook1 || Bishop2 == Rook2 || Bishop2 % 2 == Bishop1 % 2);
 
+			// Randomly place the first knight in an available position
 			int Knight1;
 			do
 			{
@@ -341,6 +349,7 @@
 			}
 			while (Knight1 == King || Knight1 == Rook1 || Knight1 == Rook2 || Knight1 == Bishop1 || Knight1 == Bishop2);
 
+			// Randomly place the second knight in an available position
 			int Knight2;
 			do
 			{
@@ -348,6 +357,7 @@
 			}
 			while (Knight2 == King || Knight2 == Rook1 || Knight2 == Rook2 || Knight2 == Bishop1 || Knight2 == Bishop2 || Knight2 == Knight1);
 
+			// Initialize an array representing the back rank
 			string[] backline1 = new string[8];
 			backline1[King] = "k";
 			backline1[Rook1] = "r";
@@ -357,30 +367,41 @@
 			backline1[Knight1] = "n";
 			backline1[Knight2] = "n";
 
-			for(int i = 0; i < 8; i++)
+			// Place the queen in the remaining empty square
+			for (int i = 0; i < 8; i++)
 			{
 				if (backline1[i] == null)
 				{
 					backline1[i] = "q";
 				}
 			}
+
+			// Construct the board string in FEN format
 			string board = "";
 			for (int i = 0; i < backline1.Length; i++)
 			{
 				board += backline1[i];
 			}
 			board += "/pppppppp/8/8/8/8/PPPPPPPP/";
+
+			// Add the mirrored back rank for black in uppercase
 			for (int i = 0; i < backline1.Length; i++)
 			{
 				board += backline1[i].ToUpper();
 			}
+
+			// Append the remaining FEN fields (active color, castling rights, en passant, halfmove, fullmove)
 			board += " w KQkq - 0 1";
+
+			// Load the generated position
 			LoadPosition(board);
+
 			return board;
 		}
 
 		public string LoadChess960FromString(string board)
 		{
+			// Load a Chess960 position from a provided FEN string
 			LoadPosition(board);
 			return board;
 		}
